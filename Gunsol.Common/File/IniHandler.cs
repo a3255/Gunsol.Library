@@ -7,6 +7,9 @@ using System.Text;
 
 namespace Gunsol.Common.File
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class IniHandler
     {
         #region Property
