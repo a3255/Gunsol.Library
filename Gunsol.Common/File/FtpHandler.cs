@@ -7,6 +7,9 @@ using System.Text;
 
 namespace Gunsol.Common.File
 {
+    /// <summary>
+    /// FTP 다운로드/업로드 기능을 제공하는 Class
+    /// </summary>
     public class FtpHandler
     {
         #region Property

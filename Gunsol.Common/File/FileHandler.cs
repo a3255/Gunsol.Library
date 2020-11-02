@@ -113,6 +113,7 @@ namespace Gunsol.Common.File
         }
         #endregion
 
+        #region Method
         /// <summary>
         /// 로컬에 빈 파일 생성
         /// </summary>
@@ -175,7 +176,6 @@ namespace Gunsol.Common.File
             }
         }
 
-        #region Method
         /// <summary>
         /// 로컬 파일 읽기
         /// </summary>
