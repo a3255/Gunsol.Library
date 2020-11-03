@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Gunsol.Common.Model
+namespace Gunsol.Common.Model.Class
 {
     /// <summary>
     /// TCP 통신 정보 Class
@@ -12,7 +12,7 @@ namespace Gunsol.Common.Model
     {
         #region Property
         /// <summary>
-        /// IP 주소    T
+        /// IP 주소
         /// </summary>
         public string ipAddress { get; set; }
 
@@ -24,7 +24,7 @@ namespace Gunsol.Common.Model
 
         #region Constructor
         /// <summary>
-        /// 빈 값으로 Propery 초기화 (이후 Property 설정 필요)
+        /// 빈 값으로 Propery 초기화
         /// </summary>
         public TcpInfo()
         {

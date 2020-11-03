@@ -4,7 +4,7 @@ using System.IO.Ports;
 using System.Linq;
 using System.Text;
 
-namespace Gunsol.Common.Model
+namespace Gunsol.Common.Model.Class
 {
     /// <summary>
     /// Serial 통신 정보 Class
@@ -12,16 +12,35 @@ namespace Gunsol.Common.Model
     public class SerialInfo
     {
         #region Property
-        public string portName { get; set; }        // ComPort 명
-        public int baudRate { get; set; }           // 통신 속도 (BaudRate)
-        public Parity parity { get; set; }          // Parity
-        public int dataBits { get; set; }           // DataBits
-        public StopBits stopBits { get; set; }      // StopBits
+        /// <summary>
+        /// COM Port
+        /// </summary>
+        public string portName { get; set; }
+
+        /// <summary>
+        /// 통신 속도
+        /// </summary>
+        public int baudRate { get; set; }
+
+        /// <summary>
+        /// Parity
+        /// </summary>
+        public Parity parity { get; set; }
+
+        /// <summary>
+        /// Data Bits
+        /// </summary>
+        public int dataBits { get; set; }
+
+        /// <summary>
+        /// Stop Bits
+        /// </summary>
+        public StopBits stopBits { get; set; }
         #endregion
 
         #region Constructor
         /// <summary>
-        /// 빈 값으로 Propery 초기화 (이후 Property 설정 필요)
+        /// 빈 값으로 Propery 초기화
         /// </summary>
         public SerialInfo()
         {
@@ -35,11 +54,11 @@ namespace Gunsol.Common.Model
         /// <summary>
         /// Parameter를 사용하여 Propery 초기화
         /// </summary>
-        /// <param name="portName">ComPort 명</param>
-        /// <param name="baudRate">통신 속도 (BaudRate)</param>
+        /// <param name="portName">COM Port</param>
+        /// <param name="baudRate">통신 속도</param>
         /// <param name="parity">Parity</param>
-        /// <param name="dataBits">DataBits</param>
-        /// <param name="stopBits">StopBits</param>
+        /// <param name="dataBits">Data Bits</param>
+        /// <param name="stopBits">Stop Bits</param>
         public SerialInfo(string portName, int baudRate, Parity parity, int dataBits, StopBits stopBits)
         {
             this.portName = portName;

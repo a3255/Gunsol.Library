@@ -6,6 +6,9 @@ using System.Linq;
 using System.Text;
 
 using Gunsol.Common.File;
+using Gunsol.Common.Model.Class;
+using Gunsol.Common.Model.Enum;
+using Gunsol.Common.Model.Struct;
 using Gunsol.Common.Protocol;
 
 
@@ -16,51 +19,7 @@ namespace Gunsol.Common.DBMS
     /// </summary>
     public class MssqlHandler
     {
-        #region Property (Enum/Struct)
-        /// <summary>
-        /// Procedure/Query 의 실행 타입
-        /// </summary>
-        public enum ExecuteType
-        {
-            /// <summary>
-            /// SELECT Procedure/Query
-            /// </summary>
-            SELECT = 0,
-
-            /// <summary>
-            /// No Select Procedure/Query
-            /// </summary>
-            NOSELECT = 1
-        }
-
-        /// <summary>
-        /// Method 실행 결과
-        /// </summary>
-        public struct CallResult
-        {
-            /// <summary>
-            /// 성공 여부
-            /// </summary>
-            public bool isSuccess;
-
-            /// <summary>
-            /// 결과 테이블 (결과가 없을 경우 null)
-            /// </summary>
-            public DataTable resultTable;
-
-            /// <summary>
-            /// 결과 영향 받은 RowCount (Select일 경우 Select한 RowCount)
-            /// </summary>
-            public int resultRowCount;
-
-            /// <summary>
-            /// 실행 시간(ms)
-            /// </summary>
-            public double resultTime;
-        }
-        #endregion
-
-        #region Property (Variable)
+        #region Property
         /// <summary>
         /// DB 접속 주소
         /// </summary>
@@ -142,7 +101,7 @@ namespace Gunsol.Common.DBMS
         /// <summary>
         /// 데이터베이스에 접속
         /// </summary>
-        /// <returns>IsSuccess</returns>
+        /// <returns>접속 성공 여부</returns>
         public bool Connect()
         {
             bool isConnect = false;
@@ -222,9 +181,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Select(string tableName, string condition = null)
+        public CommonStruct.CallResult Select(string tableName, string condition = null)
         {
-            CallResult result = new CallResult();
+            CommonStruct.CallResult result = new CommonStruct.CallResult();
             SqlCommand mssqlCommand = null;
             SqlDataReader mssqlReader = null;
             DataTable resultTable = null;
@@ -303,9 +262,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="data">데이터</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Insert(string tableName, Dictionary<string, object> data)
+        public CommonStruct.CallResult Insert(string tableName, Dictionary<string, object> data)
         {
-            CallResult result = new CallResult();
+            CommonStruct.CallResult result = new CommonStruct.CallResult();
             SqlCommand mssqlCommand = null;
             int insertRows = 0;
 
@@ -377,9 +336,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="data">수정 데이터</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Update(string tableName, Dictionary<string, object> data, string condition = null)
+        public CommonStruct.CallResult Update(string tableName, Dictionary<string, object> data, string condition = null)
         {
-            CallResult result = new CallResult();
+            CommonStruct.CallResult result = new CommonStruct.CallResult();
             SqlCommand mssqlCommand = null;
             int updateRows = 0;
 
@@ -461,9 +420,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Delete(string tableName, string condition = null)
+        public CommonStruct.CallResult Delete(string tableName, string condition = null)
         {
-            CallResult result = new CallResult();
+            CommonStruct.CallResult result = new CommonStruct.CallResult();
             SqlCommand mssqlCommand = null;
             int deleteRows = 0;
 
@@ -535,9 +494,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="param">Procedure Parameter</param>
         /// <param name="type">Procedure의 실행 타입(SELECT/NOSELECT)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Execute(string procName, Dictionary<string, object> param, ExecuteType type)
+        public CommonStruct.CallResult Execute(string procName, Dictionary<string, object> param, CommonEnum.ExecuteType type)
         {
-            CallResult result = new CallResult();
+            CommonStruct.CallResult result = new CommonStruct.CallResult();
             SqlCommand mssqlCommand = null;
             SqlDataReader mssqlReader = null;
             DataTable resultTable = null;
@@ -565,7 +524,7 @@ namespace Gunsol.Common.DBMS
                     mssqlCommand.Parameters.AddWithValue(p.Key, p.Value.ToString());
                 }
 
-                if (type == ExecuteType.SELECT)
+                if (type == CommonEnum.ExecuteType.SELECT)
                 {
                     mssqlReader = mssqlCommand.ExecuteReader();
                     resultTable.Load(mssqlReader);
@@ -613,9 +572,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="query">Query</param>
         /// <param name="type">Query의 실행 타입(SELECT/NOSELECT)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Execute(string query, ExecuteType type)
+        public CommonStruct.CallResult Execute(string query, CommonEnum.ExecuteType type)
         {
-            CallResult result = new CallResult();
+            CommonStruct.CallResult result = new CommonStruct.CallResult();
             SqlCommand mssqlCommand = null;
             SqlDataReader mssqlReader = null;
             DataTable resultTable = null;
@@ -638,7 +597,7 @@ namespace Gunsol.Common.DBMS
                 mssqlCommand.CommandText = query;
                 mssqlCommand.CommandTimeout = 10;
 
-                if (type == ExecuteType.SELECT)
+                if (type == CommonEnum.ExecuteType.SELECT)
                 {
                     mssqlReader = mssqlCommand.ExecuteReader();
                     resultTable.Load(mssqlReader);

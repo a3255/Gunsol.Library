@@ -97,9 +97,11 @@
     <Compile Include="File\FtpHandler.cs" />
     <Compile Include="File\IniHandler.cs" />
     <Compile Include="File\LogHandler.cs" />
-    <Compile Include="Model\DdeInfo.cs" />
-    <Compile Include="Model\SerialInfo.cs" />
-    <Compile Include="Model\TcpInfo.cs" />
+    <Compile Include="Model\Class\DdeInfo.cs" />
+    <Compile Include="Model\Class\SerialInfo.cs" />
+    <Compile Include="Model\Class\TcpInfo.cs" />
+    <Compile Include="Model\Enum\CommonEnum.cs" />
+    <Compile Include="Model\Struct\CommonStruct.cs" />
     <Compile Include="Protocol\ModbusRtuHandler.cs" />
     <Compile Include="Protocol\ModbusTcpHandler.cs" />
     <Compile Include="Protocol\DdeHandler.cs" />
@@ -115,6 +117,7 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.113.1\build\net20\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.113.1\build\net20\System.Data.SQLite.Core.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

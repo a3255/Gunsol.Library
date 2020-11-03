@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Gunsol.Common.Model
+namespace Gunsol.Common.Model.Class
 {
     /// <summary>
     /// DDE 통신 정보 Class
@@ -24,7 +24,7 @@ namespace Gunsol.Common.Model
 
         #region Constructor
         /// <summary>
-        /// 빈 값으로 Propery 초기화 (이후 Property 설정 필요)
+        /// 빈 값으로 Propery 초기화
         /// </summary>
         public DdeInfo()
         {
