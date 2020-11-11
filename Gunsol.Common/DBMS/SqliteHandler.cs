@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
-using Gunsol.Common.File;
-using Gunsol.Common.Protocol;
+//using Gunsol.Common.File;
+using Gunsol.Common.Model.Class;
+using Gunsol.Common.Model.Enum;
+using Gunsol.Common.Model.Struct;
+//using Gunsol.Common.Protocol;
 
 
 namespace Gunsol.Common.DBMS
@@ -16,55 +20,25 @@ namespace Gunsol.Common.DBMS
     /// </summary>
     public class SqliteHandler
     {
-        #region Property (Enum/Struct)
-        /// <summary>
-        /// Procedure/Query 의 실행 타입
-        /// </summary>
-        public enum ExecuteType
-        {
-            /// <summary>
-            /// SELECT Procedure/Query
-            /// </summary>
-            SELECT = 0,
-
-            /// <summary>
-            /// No Select Procedure/Query
-            /// </summary>
-            NOSELECT = 1
-        }
-
-        /// <summary>
-        /// Method 실행 결과
-        /// </summary>
-        public struct CallResult
-        {
-            /// <summary>
-            /// 성공 여부
-            /// </summary>
-            public bool isSuccess;
-
-            /// <summary>
-            /// 결과 테이블 (결과가 없을 경우 null)
-            /// </summary>
-            public DataTable resultTable;
-
-            /// <summary>
-            /// 결과 영향 받은 RowCount (Select일 경우 Select한 RowCount)
-            /// </summary>
-            public int resultRowCount;
-
-            /// <summary>
-            /// 실행 시간(ms)
-            /// </summary>
-            public double resultTime;
-        }
-        #endregion
-
-        #region Property (Variable)
+        #region Property
         /// <summary>
         /// SQLite 파일 경로
         /// </summary>
         public string localDbPath { get; set; }
+
+        /// <summary>
+        /// DB 접속 상태
+        /// </summary>
+        public ConnectionState dbState
+        {
+            get
+            {
+                if (sqliteConn == null)
+                    return ConnectionState.Closed;
+                else
+                    return sqliteConn.State;
+            }
+        }
 
         /// <summary>
         /// SQLite 객체
@@ -75,41 +49,29 @@ namespace Gunsol.Common.DBMS
         /// 연결 문자열
         /// </summary>
         private string connectionString;
+
+        /// <summary>
+        /// StopWatch 객체
+        /// </summary>
+        private Stopwatch stopWatch;
         #endregion
 
         #region Contructor
         /// <summary>
-        /// 빈 값으로 Propery 초기화
+        /// Parameter를 사용하여 Propery 초기화 (Parameter를 설정하지 않을 경우, 빈 값으로 초기화)
         /// </summary>
-        public SqliteHandler()
+        /// <param name="localDbPath">SQLite 파일 경로</param>
+        public SqliteHandler(string localDbPath = null)
         {
-            try
-            {
-                this.sqliteConn = new SQLiteConnection();
-                this.localDbPath = string.Empty;
-                this.connectionString = string.Empty;
-            }
-            catch (Exception ex)
-            {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: Message = {1}", this.ToString(), ex.Message));
-            }
-        }
+            this.sqliteConn = new SQLiteConnection();
 
-        /// <summary>
-        /// Parameter를 사용하여 Propery 초기화
-        /// </summary>
-        /// <param name="localDbPath">// SQLite 파일 경로</param>
-        public SqliteHandler(string localDbPath)
-        {
-            try
+            if (localDbPath == null)
             {
-                this.sqliteConn = new SQLiteConnection();
-                this.localDbPath = localDbPath;
-                this.connectionString = string.Format("Data source={0}; Version=3;", localDbPath);
+                this.localDbPath = string.Empty;
             }
-            catch (Exception ex)
+            else
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: Message = {1}", this.ToString(), ex.Message));
+                this.localDbPath = localDbPath;
             }
         }
         #endregion
@@ -119,82 +81,107 @@ namespace Gunsol.Common.DBMS
         /// 데이터베이스에 접속
         /// </summary>
         /// <returns>IsSuccess</returns>
-        private bool Connect()
+        private CommonStruct.FuncResult Connect()
         {
-            bool isConnect = false;
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
 
             try
             {
                 if (localDbPath.Equals(string.Empty))
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail :: Database Info Not Initialzed", this.ToString()));
+                    //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail :: Database Info Not Initialzed", this.ToString()));
+
+                    result.isSuccess = false;
                 }
                 else
                 {
-                    if (connectionString.Equals(string.Empty))
-                    {
-                        connectionString = string.Format("Data source={0}; Version=3;", localDbPath);
-                    }
+                    connectionString = string.Format("Data source={0}; Version=3;", localDbPath);
 
                     if (!System.IO.File.Exists(localDbPath))
                     {
                         SQLiteConnection.CreateFile(localDbPath);
                     }
 
-                    if (sqliteConn.State == System.Data.ConnectionState.Closed)
+                    if (dbState == ConnectionState.Closed)
                     {
                         sqliteConn.ConnectionString = connectionString;
                         sqliteConn.Open();
 
-                        if(sqliteConn.State == ConnectionState.Open)
+                        if(dbState == ConnectionState.Open)
                         {
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Success", this.ToString()));
+                            //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Success", this.ToString()));
 
-                            isConnect = true;
+                            result.isSuccess = true;
                         }
                         else
                         {
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail", this.ToString()));
+                            //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail", this.ToString()));
 
-                            isConnect = false;
+                            result.isSuccess = false;
                         }
                     }
                     else
                     {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Success :: Already Open", this.ToString()));
+                        //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Success :: Already Open", this.ToString()));
 
-                        isConnect = true;
+                        result.isSuccess = true;
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Exception :: Message = {1}", this.ToString(), ex.Message));
 
-                isConnect = false;
+                result.isSuccess = false;
+                result.funcException = ex;
             }
 
-            return isConnect;
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
         /// 데이터베이스 접속 해제
         /// </summary>
-        public void Disconnect()
+        public CommonStruct.FuncResult Disconnect()
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
-                if (sqliteConn.State == System.Data.ConnectionState.Open)
+                if (dbState == System.Data.ConnectionState.Open)
                 {
                     sqliteConn.Close();
                 }
 
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Success", this.ToString()));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Success", this.ToString()));
+
+                result.isSuccess = true;
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Exception :: Message = {1}", this.ToString(), ex.Message));
+
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
@@ -203,22 +190,22 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Select(string tableName, string condition = null)
+        public CommonStruct.SqlResult Select(string tableName, string condition = null)
         {
-            CallResult result = new CallResult();
+            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
             SQLiteCommand sqliteCommand = null;
             SQLiteDataReader sqliteReader = null;
             DataTable resultTable = null;
 
+            stopWatch.Start();
+
             try
             {
-                DateTime callStart = DateTime.Now;
-                TimeSpan callTime = new TimeSpan();
                 string selectQuery = string.Empty;
                 string tableQuery = string.Empty;
                 string conditionQuery = string.Empty;
 
-                if (sqliteConn.State != System.Data.ConnectionState.Open)
+                if (dbState != System.Data.ConnectionState.Open)
                 {
                     Connect();
                 }
@@ -242,23 +229,19 @@ namespace Gunsol.Common.DBMS
                 sqliteReader = sqliteCommand.ExecuteReader();
                 resultTable.Load(sqliteReader);
 
-                callTime = DateTime.Now.Subtract(callStart);
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Select(TableName = {1}) Success :: RowCount = {2}", this.ToString(), tableName, result.resultRowCount));
 
-                result.isSuccess = true;
+                result.funcResult.isSuccess = true;
+                result.funcResult.funcException = null;
                 result.resultTable = resultTable;
-                result.resultRowCount = resultTable.Rows.Count;
-                result.resultTime = callTime.TotalMilliseconds;
-
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Select(TableName = {1}) Success :: RowCount = {2}", this.ToString(), tableName, result.resultRowCount));
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Select(TableName = {1}) Exception :: Message = {2}", this.ToString(), tableName, ex.Message));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Select(TableName = {1}) Exception :: Message = {2}", this.ToString(), tableName, ex.Message));
 
-                result.isSuccess = false;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
                 result.resultTable = null;
-                result.resultRowCount = 0;
-                result.resultTime = 0;
             }
             finally
             {
@@ -275,6 +258,12 @@ namespace Gunsol.Common.DBMS
                 }
             }
 
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
             return result;
         }
 
@@ -284,21 +273,20 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="data">데이터</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Insert(string tableName, Dictionary<string, object> data)
+        public CommonStruct.SqlResult Insert(string tableName, Dictionary<string, object> data)
         {
-            CallResult result = new CallResult();
+            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
             SQLiteCommand sqliteCommand = null;
-            int insertRows = 0;
+
+            stopWatch.Start();
 
             try
             {
-                DateTime callStart = DateTime.Now;
-                TimeSpan callTime = new TimeSpan();
                 string insertQuery = string.Empty;
                 string columnQuery = string.Empty;
                 string valueQuery = string.Empty;
 
-                if (sqliteConn.State != System.Data.ConnectionState.Open)
+                if (dbState != System.Data.ConnectionState.Open)
                 {
                     Connect();
                 }
@@ -319,25 +307,21 @@ namespace Gunsol.Common.DBMS
                 sqliteCommand.CommandText = insertQuery;
                 sqliteCommand.CommandTimeout = 1;
 
-                insertRows = sqliteCommand.ExecuteNonQuery();
+                sqliteCommand.ExecuteNonQuery();
 
-                callTime = DateTime.Now.Subtract(callStart);
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Insert(TableName = {1}) Success", this.ToString(), tableName));
 
-                result.isSuccess = true;
+                result.funcResult.isSuccess = true;
+                result.funcResult.funcException = null;
                 result.resultTable = null;
-                result.resultRowCount = insertRows;
-                result.resultTime = callTime.TotalMilliseconds;
-
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Insert(TableName = {1}) Success", this.ToString(), tableName));
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Insert(TableName = {1}) Exception :: Message = {1}", this.ToString(), ex.Message));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Insert(TableName = {1}) Exception :: Message = {1}", this.ToString(), ex.Message));
 
-                result.isSuccess = false;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
                 result.resultTable = null;
-                result.resultRowCount = 0;
-                result.resultTime = 0;
             }
             finally
             {
@@ -347,6 +331,12 @@ namespace Gunsol.Common.DBMS
                     sqliteCommand = null;
                 }
             }
+
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
 
             return result;
         }
@@ -358,22 +348,20 @@ namespace Gunsol.Common.DBMS
         /// <param name="data">수정 데이터</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Update(string tableName, Dictionary<string, object> data, string condition = null)
+        public CommonStruct.SqlResult Update(string tableName, Dictionary<string, object> data, string condition = null)
         {
-            CallResult result = new CallResult();
-
+            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
             SQLiteCommand sqliteCommand = null;
-            int updateRows = 0;
+
+            stopWatch.Start();
 
             try
             {
-                DateTime callStart = DateTime.Now;
-                TimeSpan callTime = new TimeSpan();
                 string updateQuery = string.Empty;
                 string setQuery = string.Empty;
                 string conditionQuery = string.Empty;
 
-                if (sqliteConn.State != System.Data.ConnectionState.Open)
+                if (dbState != System.Data.ConnectionState.Open)
                 {
                     Connect();
                 }
@@ -404,25 +392,21 @@ namespace Gunsol.Common.DBMS
                 sqliteCommand.CommandText = updateQuery;
                 sqliteCommand.CommandTimeout = 1;
 
-                updateRows = sqliteCommand.ExecuteNonQuery();
+                sqliteCommand.ExecuteNonQuery();
 
-                callTime = DateTime.Now.Subtract(callStart);
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Update(TableName = {1}) Success :: RowCount = {2}", this.ToString(), tableName, result.resultRowCount));
 
-                result.isSuccess = true;
+                result.funcResult.isSuccess = true;
+                result.funcResult.funcException = null;
                 result.resultTable = null;
-                result.resultRowCount = updateRows;
-                result.resultTime = callTime.TotalMilliseconds;
-
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Update(TableName = {1}) Success :: RowCount = {2}", this.ToString(), tableName, result.resultRowCount));
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Update(TableName = {1}) Exception :: Message = {2}", this.ToString(), tableName, ex.Message));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Update(TableName = {1}) Exception :: Message = {2}", this.ToString(), tableName, ex.Message));
 
-                result.isSuccess = false;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
                 result.resultTable = null;
-                result.resultRowCount = 0;
-                result.resultTime = 0;
             }
             finally
             {
@@ -433,6 +417,12 @@ namespace Gunsol.Common.DBMS
                 }
             }
 
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
             return result;
         }
 
@@ -442,19 +432,16 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Delete(string tableName, string condition = null)
+        public CommonStruct.SqlResult Delete(string tableName, string condition = null)
         {
-            CallResult result = new CallResult();
-
+            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
             SQLiteCommand sqliteCommand = null;
-            int deleteRows = 0;
+
+            stopWatch.Start();
 
             try
             {
-                DateTime callStart = DateTime.Now;
-                TimeSpan callTime = new TimeSpan();
-
-                if (sqliteConn.State != System.Data.ConnectionState.Open)
+                if (dbState != System.Data.ConnectionState.Open)
                 {
                     Connect();
                 }
@@ -478,25 +465,21 @@ namespace Gunsol.Common.DBMS
                 sqliteCommand.CommandText = deleteQuery;
                 sqliteCommand.CommandTimeout = 1;
 
-                deleteRows = sqliteCommand.ExecuteNonQuery();
+                sqliteCommand.ExecuteNonQuery();
 
-                callTime = DateTime.Now.Subtract(callStart);
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Delete(TableName = {1}) Success :: RowCount = {2}", this.ToString(), tableName, result.resultRowCount));
 
-                result.isSuccess = true;
+                result.funcResult.isSuccess = true;
+                result.funcResult.funcException = null;
                 result.resultTable = null;
-                result.resultRowCount = deleteRows;
-                result.resultTime = callTime.TotalMilliseconds;
-
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Delete(TableName = {1}) Success :: RowCount = {2}", this.ToString(), tableName, result.resultRowCount));
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Delete(TableName = {1}) Exception :: Message = {2}", this.ToString(), tableName, ex.Message));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Delete(TableName = {1}) Exception :: Message = {2}", this.ToString(), tableName, ex.Message));
 
-                result.isSuccess = false;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
                 result.resultTable = null;
-                result.resultRowCount = 0;
-                result.resultTime = 0;
             }
             finally
             {
@@ -506,6 +489,12 @@ namespace Gunsol.Common.DBMS
                     sqliteCommand = null;
                 }
             }
+
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
 
             return result;
         }
@@ -517,20 +506,18 @@ namespace Gunsol.Common.DBMS
         /// <param name="param">Procedure Parameter</param>
         /// <param name="type">Procedure의 실행 타입(SELECT/NOSELECT)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Execute(string procName, Dictionary<string, object> param, ExecuteType type)
+        public CommonStruct.SqlResult Execute(string procName, Dictionary<string, object> param, CommonEnum.ExecuteType type)
         {
-            CallResult result = new CallResult();
+            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
             SQLiteCommand sqliteCommand = null;
             SQLiteDataReader sqliteReader = null;
             DataTable resultTable = null;
-            int executeRows = 0;
+
+            stopWatch.Start();
 
             try
             {
-                DateTime callStart = DateTime.Now;
-                TimeSpan callTime = new TimeSpan();
-
-                if (sqliteConn.State != System.Data.ConnectionState.Open)
+                if (dbState != System.Data.ConnectionState.Open)
                 {
                     Connect();
                 }
@@ -547,34 +534,30 @@ namespace Gunsol.Common.DBMS
                     sqliteCommand.Parameters.AddWithValue(p.Key, p.Value.ToString());
                 }
 
-                if (type == ExecuteType.SELECT)
+                if (type == CommonEnum.ExecuteType.SELECT)
                 {
                     sqliteReader = sqliteCommand.ExecuteReader();
                     resultTable.Load(sqliteReader);
-                    executeRows = resultTable.Rows.Count;
                 }
                 else
                 {
                     resultTable = null;
-                    executeRows = sqliteCommand.ExecuteNonQuery();
+                    sqliteCommand.ExecuteNonQuery();
                 }
 
-                callTime = DateTime.Now.Subtract(callStart);
-                result.isSuccess = true;
-                result.resultTable = resultTable;
-                result.resultRowCount = executeRows;
-                result.resultTime = callTime.TotalMilliseconds;
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Execute(ProcName = {1}) Success :: Type = {2} RowCount = {3}", this.ToString(), procName, type, executeRows));
 
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Execute(ProcName = {1}) Success :: Type = {2} RowCount = {3}", this.ToString(), procName, type, executeRows));
+                result.funcResult.isSuccess = true;
+                result.funcResult.funcException = null;
+                result.resultTable = resultTable;
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Execute(ProcName = {1}) Exception :: Message = {2}", this.ToString(), procName, ex.Message));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Execute(ProcName = {1}) Exception :: Message = {2}", this.ToString(), procName, ex.Message));
 
-                result.isSuccess = false;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
                 result.resultTable = null;
-                result.resultRowCount = 0;
-                result.resultTime = 0;
             }
             finally
             {
@@ -585,6 +568,12 @@ namespace Gunsol.Common.DBMS
                 }
             }
 
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
             return result;
         }
 
@@ -594,21 +583,16 @@ namespace Gunsol.Common.DBMS
         /// <param name="query">Query</param>
         /// <param name="type">Query의 실행 타입(SELECT/NOSELECT)</param>
         /// <returns>Method 실행 결과</returns>
-        public CallResult Execute(string query, ExecuteType type)
+        public CommonStruct.SqlResult Execute(string query, CommonEnum.ExecuteType type)
         {
-            CallResult result = new CallResult();
-
+            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
             SQLiteCommand sqliteCommand = null;
             SQLiteDataReader sqliteReader = null;
             DataTable resultTable = null;
-            int executeRows = 0;
 
             try
             {
-                DateTime callStart = DateTime.Now;
-                TimeSpan callTime = new TimeSpan();
-
-                if (sqliteConn.State != System.Data.ConnectionState.Open)
+                if (dbState != System.Data.ConnectionState.Open)
                 {
                     Connect();
                 }
@@ -620,35 +604,30 @@ namespace Gunsol.Common.DBMS
                 sqliteCommand.CommandText = query;
                 sqliteCommand.CommandTimeout = 10;
 
-                if (type == ExecuteType.SELECT)
+                if (type == CommonEnum.ExecuteType.SELECT)
                 {
                     sqliteReader = sqliteCommand.ExecuteReader();
                     resultTable.Load(sqliteReader);
-                    executeRows = resultTable.Rows.Count;
                 }
                 else
                 {
                     resultTable = null;
-                    executeRows = sqliteCommand.ExecuteNonQuery();
+                    sqliteCommand.ExecuteNonQuery();
                 }
 
-                callTime = DateTime.Now.Subtract(callStart);
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Execute(Query = {1}) Success :: Type = {2} RowCount = {3}", this.ToString(), query, type, executeRows));
 
-                result.isSuccess = true;
+                result.funcResult.isSuccess = true;
+                result.funcResult.funcException = null;
                 result.resultTable = resultTable;
-                result.resultRowCount = executeRows;
-                result.resultTime = callTime.TotalMilliseconds;
-
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Execute(Query = {1}) Success :: Type = {2} RowCount = {3}", this.ToString(), query, type, executeRows));
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Execute(Query = {1}) Exception :: Message = {2}", this.ToString(), query, ex.Message));
+                //LogHandler.WriteLog(string.Empty, string.Format("{0} :: Execute(Query = {1}) Exception :: Message = {2}", this.ToString(), query, ex.Message));
 
-                result.isSuccess = false;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
                 result.resultTable = null;
-                result.resultRowCount = 0;
-                result.resultTime = 0;
             }
             finally
             {
@@ -658,6 +637,12 @@ namespace Gunsol.Common.DBMS
                     sqliteCommand = null;
                 }
             }
+
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
 
             return result;
         }

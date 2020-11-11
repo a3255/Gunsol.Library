@@ -12,14 +12,35 @@ namespace Gunsol.Common.Model.Struct
     public class CommonStruct
     {
         /// <summary>
-        /// Query 실행 결과
+        /// 함수 실행 결과
         /// </summary>
-        public struct CallResult
+        public struct FuncResult
         {
             /// <summary>
             /// 성공 여부
             /// </summary>
             public bool isSuccess;
+
+            /// <summary>
+            /// 실행 시간(ms)
+            /// </summary>
+            public long totalMilliseconds;
+
+            /// <summary>
+            /// 예외 객체
+            /// </summary>
+            public Exception funcException;
+        }
+
+        /// <summary>
+        /// Query 실행 결과
+        /// </summary>
+        public struct SqlResult
+        {
+            /// <summary>
+            /// 실행 결과
+            /// </summary>
+            public FuncResult funcResult;
 
             /// <summary>
             /// 결과 테이블 (결과가 없을 경우 null)
@@ -29,12 +50,7 @@ namespace Gunsol.Common.Model.Struct
             /// <summary>
             /// 결과 영향 받은 RowCount (Select일 경우 Select한 RowCount)
             /// </summary>
-            public int resultRowCount;
-
-            /// <summary>
-            /// 실행 시간(ms)
-            /// </summary>
-            public double resultTime;
+            //public int resultRowCount;
         }
     }
 }

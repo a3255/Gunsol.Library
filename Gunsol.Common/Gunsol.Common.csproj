@@ -93,22 +93,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="File\FileHandler.cs" />
-    <Compile Include="File\FtpHandler.cs" />
-    <Compile Include="File\IniHandler.cs" />
-    <Compile Include="File\LogHandler.cs" />
+    <Compile Include="DBMS\SqliteHandler.cs" />
     <Compile Include="Model\Class\DdeInfo.cs" />
     <Compile Include="Model\Class\SerialInfo.cs" />
     <Compile Include="Model\Class\TcpInfo.cs" />
     <Compile Include="Model\Enum\CommonEnum.cs" />
     <Compile Include="Model\Struct\CommonStruct.cs" />
-    <Compile Include="Protocol\ModbusRtuHandler.cs" />
-    <Compile Include="Protocol\ModbusTcpHandler.cs" />
-    <Compile Include="Protocol\DdeHandler.cs" />
-    <Compile Include="Protocol\MqttHandler.cs" />
-    <Compile Include="Protocol\TcpHandler.cs" />
-    <Compile Include="Protocol\SerialHandler.cs" />
-    <Compile Include="DBMS\SqliteHandler.cs" />
     <Compile Include="DBMS\MssqlHandler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

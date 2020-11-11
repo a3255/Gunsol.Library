@@ -82,29 +82,21 @@ namespace Gunsol.Common.File
 
         #region Contructor
         /// <summary>
-        /// 빈 값으로 Propery 초기화
-        /// </summary>
-        public FileHandler()
-        {
-            try
-            {
-                this.filePath = string.Empty;
-            }
-            catch (Exception ex)
-            {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: Message = {1}", this.ToString(), ex.Message));
-            }
-        }
-
-        /// <summary>
         /// Parameter를 사용하여 Propery 초기화
         /// </summary>
-        /// <param name="filePath">파일 경로</param>
-        public FileHandler(string filePath)
+        /// <param name="filePath">파일 경로 (생략시 null 할당)</param>
+        public FileHandler(string filePath = null)
         {
             try
             {
-                this.filePath = filePath;
+                if (filePath == null)
+                {
+                    this.filePath = string.Empty;
+                }
+                else
+                {
+                    this.filePath = filePath;
+                }
             }
             catch (Exception ex)
             {
@@ -115,60 +107,86 @@ namespace Gunsol.Common.File
 
         #region Method
         /// <summary>
-        /// 로컬에 빈 파일 생성
+        /// 지정 경로에 빈 파일 생성
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="isClear"></param>
-        public void FileCreate(string filePath = null, bool isClear = false)
+        /// <param name="filePath">생성 파일 경로</param>
+        /// <param name="isOverwrite">덮어쓰기 여부</param>
+        public void FileCreate(string filePath = null, bool isOverwrite = false)
         {
             try
             {
                 if (filePath != null)
                 {
-                    if (System.IO.File.Exists(filePath))
-                    {
-                        if (isClear)
-                        {
-                            System.IO.File.Delete(filePath);
-                            System.IO.File.Create(filePath);
+                    this.filePath = filePath;
+                }
 
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), filePath));
-                        }
-                        else
-                        {
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Fail :: File Already Exist", this.ToString(), filePath));
-                        }
+                if (isExist)
+                {
+                    if (isOverwrite)
+                    {
+                        System.IO.File.Delete(this.filePath);
+                        System.IO.File.Create(this.filePath);
+
+                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success(Overwrite)", this.ToString(), this.filePath));
                     }
                     else
                     {
-                        System.IO.File.Create(filePath);
-
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), filePath));
+                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Fail :: File Already Exist", this.ToString(), this.filePath));
                     }
                 }
                 else
                 {
-                    if (isExist)
-                    {
-                        if (isClear)
-                        {
-                            System.IO.File.Delete(this.filePath);
-                            System.IO.File.Create(this.filePath);
+                    System.IO.File.Create(filePath);
 
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), this.filePath));
-                        }
-                        else
-                        {
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Fail :: File Already Exist", this.ToString(), this.filePath));
-                        }
-                    }
-                    else
-                    {
-                        System.IO.File.Create(filePath);
+                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), this.filePath));
+                }
 
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), this.filePath));
-                    }
-                }                
+                //if (filePath != null)
+                //{
+                //    if (System.IO.File.Exists(filePath))
+                //    {
+                //        if (isOverwrite)
+                //        {
+                //            System.IO.File.Delete(filePath);
+                //            System.IO.File.Create(filePath);
+
+                //            LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), filePath));
+                //        }
+                //        else
+                //        {
+                //            LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Fail :: File Already Exist", this.ToString(), filePath));
+                //        }
+                //    }
+                //    else
+                //    {
+                //        System.IO.File.Create(filePath);
+
+                //        LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), filePath));
+                //    }
+                //}
+                //else
+                //{
+                //    if (isExist)
+                //    {
+                //        if (isOverwrite)
+                //        {
+                //            System.IO.File.Delete(this.filePath);
+                //            System.IO.File.Create(this.filePath);
+
+                //            LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), this.filePath));
+                //        }
+                //        else
+                //        {
+                //            LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Fail :: File Already Exist", this.ToString(), this.filePath));
+                //        }
+                //    }
+                //    else
+                //    {
+                //        System.IO.File.Create(filePath);
+
+                //        LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), this.filePath));
+                //    }
+                //}                
             }
             catch (Exception ex)
             {
@@ -182,7 +200,7 @@ namespace Gunsol.Common.File
         /// <param name="filePath">파일 경로</param>
         /// <param name="readLines">읽을 Line 수</param>
         /// <returns>파일 내용</returns>
-        public string FileRead(string filePath = null, int readLines = 0)
+        public string FileRead(string filePath = null, ushort readLines = 0)
         {
             StreamReader fileReader = null;
             FileStream fileStream = null;
@@ -200,7 +218,7 @@ namespace Gunsol.Common.File
                 }
                 else
                 {
-                    this.filePath = filePath;                    
+                    this.filePath = filePath;
                 }
 
                 if (isExist)
