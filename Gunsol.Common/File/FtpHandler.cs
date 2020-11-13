@@ -1,138 +1,221 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 
+//using Gunsol.Common.File;
+using Gunsol.Common.Model.Class;
+using Gunsol.Common.Model.Enum;
+using Gunsol.Common.Model.Struct;
+//using Gunsol.Common.Protocol;
+
 namespace Gunsol.Common.File
 {
     /// <summary>
-    /// FTP 다운로드/업로드 기능을 제공하는 Class
+    /// FTP 다운로드/업로드/조회 기능을 제공하는 Class
     /// </summary>
     public class FtpHandler
     {
         #region Property
-        public string ftpId { get; set; }   // FTP 접속 ID
-        public string ftpPw { get; set; }   // FTP 접속 PW
-        private WebClient ftpClient;        // WebClient 객체
-        #endregion
-
-        #region Contructor
+        //private WebClient ftpClient;        // WebClient 객체
+        
         /// <summary>
-        /// Constructor To Initialize Property Using Empty Value
+        /// FTP 계정 정보
         /// </summary>
-        public FtpHandler()
+        public NetworkCredential ftpUserInfo { get; set; }
+
+        /// <summary>
+        /// FTP 접속 ID
+        /// </summary>
+        public string ftpUserId
         {
-            try
+            get
             {
-                this.ftpClient = new WebClient();
-                this.ftpId = string.Empty;
-                this.ftpPw = string.Empty;
-            }
-            catch (Exception ex)
-            {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: Message = {1}", this.ToString(), ex.Message));
+                if (ftpUserInfo != null)
+                {
+                    return ftpUserInfo.UserName;
+                }
+                else
+                {
+                    return string.Empty;
+                }
             }
         }
 
         /// <summary>
-        /// Constructor To Initialize Property Using Parameters
+        /// FTP 접속 PW
         /// </summary>
-        /// <param name="ftpId">FTP 접속 ID</param>
-        /// <param name="ftpPw">FTP 접속 PW</param>
-        public FtpHandler(string ftpId, string ftpPw)
+        public string ftpUserPw
         {
-            try
+            get
             {
-                this.ftpClient = new WebClient();
-                this.ftpClient.Credentials = new NetworkCredential(ftpId, ftpPw);
-                this.ftpId = ftpId;
-                this.ftpPw = ftpPw;
+                if (ftpUserInfo != null)
+                {
+                    return ftpUserInfo.Password;
+                }
+                else
+                {
+                    return string.Empty;
+                }
             }
-            catch (Exception ex)
+        }
+
+        /// <summary>
+        /// StopWatch 객체
+        /// </summary>
+        private Stopwatch stopWatch;
+        #endregion
+
+        #region Contructor
+        /// <summary>
+        /// Parameter를 사용하여 Propery 초기화
+        /// </summary>
+        /// <param name="ftpUserInfo">FTP 계정 정보 (생략할 경우 null 할당)</param>
+        public FtpHandler(NetworkCredential ftpUserInfo = null)
+        {
+            if (ftpUserInfo == null)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: Message = {1}", this.ToString(), ex.Message));
+                this.ftpUserInfo = new NetworkCredential();
+            }
+            else
+            {
+                this.ftpUserInfo = ftpUserInfo;
             }
         }
         #endregion
 
         #region Method
         /// <summary>
-        /// Download File From FTP Server
+        /// 지정 FTP 경로의 파일 다운로드
         /// </summary>
-        /// <param name="remotePath">Remote File Path</param>
-        /// <param name="localPath">Local File Path</param>
-        public void Download(string remotePath, string localPath)
+        /// <param name="remotePath">원격 파일 경로</param>
+        /// <param name="localPath">다운로드 경로</param>
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Download(string remotePath, string localPath)
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+            Exception funcException = null;
+            bool isSuccess = false;
+
+            WebClient ftpClient = new WebClient();
+            FileStream fileStream = null;
+
+            stopWatch.Start();
+
             try
             {
-                if (ftpId.Equals(string.Empty) || ftpPw.Equals(string.Empty))
+                if (this.ftpUserId.Equals(string.Empty) || this.ftpUserPw.Equals(string.Empty))
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Download() Fail :: Credential Info Not Initialize", this.ToString()));
+                    isSuccess = false;
                 }
                 else
                 {
-                    if (ftpClient.Credentials == null)
-                    {
-                        ftpClient.Credentials = new NetworkCredential(ftpId, ftpPw);
-                    }
+                    ftpClient.Credentials = ftpUserInfo;
 
                     byte[] ftpData = ftpClient.DownloadData(remotePath);
 
-                    FileStream localFileStream = new FileStream(localPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
-                    localFileStream.Write(ftpData, 0, ftpData.Length);
-                    localFileStream.Flush();
-                    localFileStream.Close();
+                    fileStream = new FileStream(localPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+                    fileStream.Write(ftpData, 0, ftpData.Length);
+                    fileStream.Flush();
 
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Download() Success :: Path = {1}", this.ToString(), localPath));
+                    isSuccess = true;
                 }
+
+                funcException = null;
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Download() Exception :: Message = {1}", this.ToString(), ex.Message));
+                isSuccess = false;
+                funcException = ex;
             }
+            finally
+            {
+                if (fileStream != null)
+                {
+                    fileStream.Close();
+                }
+            }
+
+            stopWatch.Stop();
+
+            result.isSuccess = isSuccess;
+            result.funcException = funcException;
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
-        /// Upload File To FTP Server
+        /// 지정 FTP 경로에 파일 업로드
         /// </summary>
-        /// <param name="remotePath">Remote File Path</param>
-        /// <param name="localPath">Local File Path</param>
-        public void Upload(string remotePath, string localPath)
+        /// <param name="remotePath">업로드 경로</param>
+        /// <param name="localPath">로컬 파일 경로</param>
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Upload(string remotePath, string localPath)
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+            Exception funcException = null;
+            bool isSuccess = false;
+
+            WebClient ftpClient = new WebClient();
+            FileStream fileStream = null;
+
+            stopWatch.Start();
+
             try
             {
-                if (ftpId.Equals(string.Empty) || ftpPw.Equals(string.Empty))
+                if (this.ftpUserId.Equals(string.Empty) || this.ftpUserPw.Equals(string.Empty))
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Upload() Fail :: Credential Info Not Initialize", this.ToString()));
+                    isSuccess = false;
                 }
                 else
                 {
-                    if (ftpClient.Credentials == null)
-                    {
-                        ftpClient.Credentials = new NetworkCredential(ftpId, ftpPw);
-                    }
+                    ftpClient.Credentials = ftpUserInfo;
 
                     FileInfo fileInfo = new FileInfo(localPath);
-                    FileStream localFileStream = new FileStream(localPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
                     byte[] localFileData = new byte[fileInfo.Length];
-                       
-                    localFileStream.Read(localFileData, 0, localFileData.Length);
-                    ftpClient.UploadData(remotePath, localFileData);
-                    localFileStream.Close();
 
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Upload() Success :: Path = {1}", this.ToString(), remotePath));
+                    fileStream = new FileStream(localPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+                    fileStream.Read(localFileData, 0, localFileData.Length);
+
+                    ftpClient.UploadData(remotePath, localFileData);
+
+                    isSuccess = true;
                 }
+
+                funcException = null;
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Upload() Exception :: Message = {1}", this.ToString(), ex.Message));
+                isSuccess = false;
+                funcException = ex;
             }
+            finally
+            {
+                if (fileStream != null)
+                {
+                    fileStream.Close();
+                }
+            }
+
+            stopWatch.Stop();
+
+            result.isSuccess = isSuccess;
+            result.funcException = funcException;
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
-        /// Get File Contents From FTP Server
+        /// 지정 FTP 경로의 파일 읽기
         /// </summary>
         /// <param name="remotePath">Remote File Path</param>
         /// <returns>File Contents</returns>

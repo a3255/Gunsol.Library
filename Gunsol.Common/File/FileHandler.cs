@@ -96,7 +96,7 @@ namespace Gunsol.Common.File
         /// <summary>
         /// Parameter를 사용하여 Propery 초기화
         /// </summary>
-        /// <param name="filePath">파일 경로 (생략시 null 할당)</param>
+        /// <param name="filePath">파일 경로 (생략할 경우 빈 문자열 할당)</param>
         public FileHandler(string filePath = null)
         {
             if (filePath == null)
@@ -259,6 +259,89 @@ namespace Gunsol.Common.File
 
             stopWatch.Stop();
 
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 지정 경로의 파일 쓰기
+        /// </summary>
+        /// <param name="fileContents">파일 내용</param>
+        /// <param name="filePath">읽을 파일 경로 (생략할 경우 filePath Property 사용)</param>
+        /// <param name="isContinue">이어 쓰기 여부 (생략할 경우 기존 파일 내용에 이어 쓰기)</param>
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult FileWrite(string fileContents, string filePath = null, bool isContinue = true)
+        {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+            StreamWriter fileWriter = null;
+            FileStream fileStream = null;
+            Exception funcException = null;
+            bool isSuccess = false;
+
+            stopWatch.Start();
+
+            try
+            {
+                if (filePath == null)
+                {
+                    if (this.filePath.Equals(string.Empty))
+                    {
+                        isSuccess = false;
+                    }
+                }
+                else
+                {
+                    this.filePath = filePath;
+                }
+
+                if (isExist)
+                {
+                    fileStream = new FileStream(this.filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    fileWriter = new StreamWriter(fileStream);
+
+                    if (!isContinue)
+                    {
+                        System.IO.File.WriteAllText(this.filePath, string.Empty);
+                    }
+
+                    fileWriter.BaseStream.Seek(0, SeekOrigin.End);
+                    fileWriter.Write(fileContents);
+                    fileWriter.Flush();
+
+                    isSuccess = true;
+                }
+                else
+                {
+                    isSuccess = false;
+                }
+
+                result.funcException = null;
+            }
+            catch (Exception ex)
+            {
+                isSuccess = false;
+                funcException = ex;
+            }
+            finally
+            {
+                if (fileStream != null)
+                {
+                    fileStream.Close();
+                }
+
+                if (fileWriter != null)
+                {
+                    fileWriter.Close();
+                }
+            }
+
+            stopWatch.Stop();
+
+            result.isSuccess = isSuccess;
+            result.funcException = funcException;
             result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
 
             stopWatch.Reset();
