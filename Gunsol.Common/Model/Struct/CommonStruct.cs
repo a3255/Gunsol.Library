@@ -33,12 +33,12 @@ namespace Gunsol.Common.Model.Struct
         }
 
         /// <summary>
-        /// Query 실행 결과
+        /// DBMS 함수 실행 결과
         /// </summary>
-        public struct SqlResult
+        public struct DbmsResult
         {
             /// <summary>
-            /// 실행 결과
+            /// 함수 실행 결과
             /// </summary>
             public FuncResult funcResult;
 
@@ -51,6 +51,27 @@ namespace Gunsol.Common.Model.Struct
             /// 결과 영향 받은 RowCount (Select일 경우 Select한 RowCount)
             /// </summary>
             //public int resultRowCount;
+        }
+
+        /// <summary>
+        /// File 함수 실행 결과
+        /// </summary>
+        public struct FileResult
+        {
+            /// <summary>
+            /// 함수 실행 결과
+            /// </summary>
+            public FuncResult funcResult;
+
+            /// <summary>
+            /// 파일 검색 결과 (결과가 없을 경우 null)
+            /// </summary>
+            public System.IO.FileInfo[] resultFiles;
+
+            /// <summary>
+            /// 파일 내용 (결과가 없을 경우 null)
+            /// </summary>
+            public string resultString;
         }
     }
 }

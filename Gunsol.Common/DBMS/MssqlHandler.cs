@@ -16,7 +16,7 @@ using Gunsol.Common.Model.Struct;
 namespace Gunsol.Common.DBMS
 {
     /// <summary>
-    /// MS-SQL 관련 기능을 제공하는 Class
+    /// MS-SQL 접속/해제, 테이블 SELECT/INSERT/UPDATE/DELETE, Procedure/Query 실행 기능을 제공하는 Class
     /// </summary>
     public class MssqlHandler
     {
@@ -107,9 +107,9 @@ namespace Gunsol.Common.DBMS
 
         #region Method
         /// <summary>
-        /// 데이터베이스에 접속
+        /// MS-SQL 접속
         /// </summary>
-        /// <returns>접속 성공 여부</returns>
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
         public CommonStruct.FuncResult Connect()
         {
             CommonStruct.FuncResult result = new CommonStruct.FuncResult();
@@ -172,8 +172,9 @@ namespace Gunsol.Common.DBMS
         }
 
         /// <summary>
-        /// 데이터베이스 접속 해제
+        /// MS-SQL 접속 해제
         /// </summary>
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
         public CommonStruct.FuncResult DisConnect()
         {
             CommonStruct.FuncResult result = new CommonStruct.FuncResult();
@@ -209,14 +210,14 @@ namespace Gunsol.Common.DBMS
         }
 
         /// <summary>
-        /// 테이블 SELECT
+        /// 지정 테이블의 데이터 SELECT
         /// </summary>
-        /// <param name="tableName">테이블</param>
+        /// <param name="tableName">SELECT 테이블명</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
-        /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Select(string tableName, string condition = null)
+        /// <returns>함수 실행 결과 (DbmsResult 객체)</returns>
+        public CommonStruct.DbmsResult Select(string tableName, string condition = null)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SqlCommand mssqlCommand = null;
             SqlDataReader mssqlReader = null;
             DataTable resultTable = null;
@@ -290,14 +291,14 @@ namespace Gunsol.Common.DBMS
         }
 
         /// <summary>
-        /// 테이블 INSERT
+        /// 지정 테이블의 데이터 INSERT
         /// </summary>
         /// <param name="tableName">테이블</param>
         /// <param name="data">데이터</param>
-        /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Insert(string tableName, Dictionary<string, object> data)
+        /// <returns>함수 실행 결과 (DbmsResult 객체)</returns>
+        public CommonStruct.DbmsResult Insert(string tableName, Dictionary<string, object> data)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SqlCommand mssqlCommand = null;
 
             stopWatch.Start();
@@ -364,15 +365,15 @@ namespace Gunsol.Common.DBMS
         }
 
         /// <summary>
-        /// 테이블 UPDATE
+        /// 지정 테이블의 데이터 UPDATE
         /// </summary>
         /// <param name="tableName">테이블</param>
         /// <param name="data">수정 데이터</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
-        /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Update(string tableName, Dictionary<string, object> data, string condition = null)
+        /// <returns>함수 실행 결과 (DbmsResult 객체)</returns>
+        public CommonStruct.DbmsResult Update(string tableName, Dictionary<string, object> data, string condition = null)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SqlCommand mssqlCommand = null;
 
             stopWatch.Start();
@@ -449,14 +450,14 @@ namespace Gunsol.Common.DBMS
         }
 
         /// <summary>
-        /// 테이블 DELETE
+        /// 지정 테이블의 데이터 DELETE
         /// </summary>
         /// <param name="tableName">테이블</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
-        /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Delete(string tableName, string condition = null)
+        /// <returns>함수 실행 결과 (DbmsResult 객체)</returns>
+        public CommonStruct.DbmsResult Delete(string tableName, string condition = null)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SqlCommand mssqlCommand = null;
 
             stopWatch.Start();
@@ -522,15 +523,15 @@ namespace Gunsol.Common.DBMS
         }
 
         /// <summary>
-        /// Procedure Execute
+        /// 지정 Procedure 실행
         /// </summary>
         /// <param name="procName">Procedure</param>
         /// <param name="param">Procedure Parameter</param>
-        /// <param name="type">Procedure의 실행 타입(SELECT/NOSELECT)</param>
-        /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Execute(string procName, Dictionary<string, object> param, CommonEnum.ExecuteType type)
+        /// <param name="type">Procedure의 실행 타입 (ExecuteType 변수)</param>
+        /// <returns>함수 실행 결과 (DbmsResult 객체)</returns>
+        public CommonStruct.DbmsResult Execute(string procName, Dictionary<string, object> param, CommonEnum.ExecuteType type)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SqlCommand mssqlCommand = null;
             SqlDataReader mssqlReader = null;
             DataTable resultTable = null;
@@ -600,14 +601,14 @@ namespace Gunsol.Common.DBMS
         }
 
         /// <summary>
-        /// Query Execute
+        /// 지정 Query 실행
         /// </summary>
         /// <param name="query">Query</param>
-        /// <param name="type">Query의 실행 타입(SELECT/NOSELECT)</param>
-        /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Execute(string query, CommonEnum.ExecuteType type)
+        /// <param name="type">Query의 실행 타입 (SELECT/NOSELECT)</param>
+        /// <returns>함수 실행 결과 (DbmsResult 객체)</returns>
+        public CommonStruct.DbmsResult Execute(string query, CommonEnum.ExecuteType type)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SqlCommand mssqlCommand = null;
             SqlDataReader mssqlReader = null;
             DataTable resultTable = null;

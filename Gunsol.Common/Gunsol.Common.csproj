@@ -94,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DBMS\SqliteHandler.cs" />
+    <Compile Include="File\FileHandler.cs" />
     <Compile Include="Model\Class\DdeInfo.cs" />
     <Compile Include="Model\Class\SerialInfo.cs" />
     <Compile Include="Model\Class\TcpInfo.cs" />

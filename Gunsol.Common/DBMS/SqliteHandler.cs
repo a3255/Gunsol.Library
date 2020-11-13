@@ -190,9 +190,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Select(string tableName, string condition = null)
+        public CommonStruct.DbmsResult Select(string tableName, string condition = null)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SQLiteCommand sqliteCommand = null;
             SQLiteDataReader sqliteReader = null;
             DataTable resultTable = null;
@@ -273,9 +273,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="data">데이터</param>
         /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Insert(string tableName, Dictionary<string, object> data)
+        public CommonStruct.DbmsResult Insert(string tableName, Dictionary<string, object> data)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SQLiteCommand sqliteCommand = null;
 
             stopWatch.Start();
@@ -348,9 +348,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="data">수정 데이터</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Update(string tableName, Dictionary<string, object> data, string condition = null)
+        public CommonStruct.DbmsResult Update(string tableName, Dictionary<string, object> data, string condition = null)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SQLiteCommand sqliteCommand = null;
 
             stopWatch.Start();
@@ -432,9 +432,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="tableName">테이블</param>
         /// <param name="condition">조건(컬럼명, 값)</param>
         /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Delete(string tableName, string condition = null)
+        public CommonStruct.DbmsResult Delete(string tableName, string condition = null)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SQLiteCommand sqliteCommand = null;
 
             stopWatch.Start();
@@ -506,9 +506,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="param">Procedure Parameter</param>
         /// <param name="type">Procedure의 실행 타입(SELECT/NOSELECT)</param>
         /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Execute(string procName, Dictionary<string, object> param, CommonEnum.ExecuteType type)
+        public CommonStruct.DbmsResult Execute(string procName, Dictionary<string, object> param, CommonEnum.ExecuteType type)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SQLiteCommand sqliteCommand = null;
             SQLiteDataReader sqliteReader = null;
             DataTable resultTable = null;
@@ -583,9 +583,9 @@ namespace Gunsol.Common.DBMS
         /// <param name="query">Query</param>
         /// <param name="type">Query의 실행 타입(SELECT/NOSELECT)</param>
         /// <returns>Method 실행 결과</returns>
-        public CommonStruct.SqlResult Execute(string query, CommonEnum.ExecuteType type)
+        public CommonStruct.DbmsResult Execute(string query, CommonEnum.ExecuteType type)
         {
-            CommonStruct.SqlResult result = new CommonStruct.SqlResult();
+            CommonStruct.DbmsResult result = new CommonStruct.DbmsResult();
             SQLiteCommand sqliteCommand = null;
             SQLiteDataReader sqliteReader = null;
             DataTable resultTable = null;
