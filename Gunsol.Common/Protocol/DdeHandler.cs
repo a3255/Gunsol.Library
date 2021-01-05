@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
 
 using NDde.Client;
-using Gunsol.Common.DBMS;
-using Gunsol.Common.File;
-using Gunsol.Common.Model;
+using Gunsol.Common.Model.Class;
+using Gunsol.Common.Model.Enum;
+using Gunsol.Common.Model.Struct;
 
 namespace Gunsol.Common.Protocol
 {
@@ -28,7 +29,7 @@ namespace Gunsol.Common.Protocol
         public DdeInfo ddeInfo { get; set; }
 
         /// <summary>
-        /// 연결 여부
+        /// DDE 연결 상태
         /// </summary>
         public bool isConnect
         {
@@ -44,6 +45,11 @@ namespace Gunsol.Common.Protocol
                 }
             }
         }
+
+        /// <summary>
+        /// StopWatch 객체
+        /// </summary>
+        private Stopwatch stopWatch;
         #endregion
 
         #region Contructor
@@ -53,15 +59,8 @@ namespace Gunsol.Common.Protocol
         /// <param name="ddeInfo">DDE 통신 정보 객체</param>
         public DdeHandler(DdeInfo ddeInfo)
         {
-            try
-            {
-                this.ddeHandle = new DdeClient(ddeInfo.ddeService, ddeInfo.ddeTopic);
-                this.ddeInfo = ddeInfo;
-            }
-            catch (Exception ex)
-            {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: Message = {1}", this.ToString(), ex.Message));
-            }
+            this.ddeHandle = new DdeClient(ddeInfo.ddeService, ddeInfo.ddeTopic);
+            this.ddeInfo = ddeInfo;
         }
         #endregion
 
@@ -70,13 +69,18 @@ namespace Gunsol.Common.Protocol
         /// DDE Server에 접속
         /// </summary>
         /// <param name="ddeInfo">DDE 통신 정보 객체 (생략할 경우, 생성자 호출시 사용한 Paramter를 이용)</param>
-        public void Connect(DdeInfo ddeInfo = null)
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Connect(DdeInfo ddeInfo = null)
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
                 if (ddeInfo == null && this.ddeInfo == null)
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail :: TCP Info Not Initialized", this.ToString()));
+                    result.isSuccess = false;
                 }
                 else
                 {
@@ -97,25 +101,39 @@ namespace Gunsol.Common.Protocol
 
                     if (ddeHandle.IsConnected)
                     {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Success", this.ToString()));
+                        result.isSuccess = true;
                     }
                     else
                     {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail", this.ToString()));
+                        result.isSuccess = false;
                     }
                 }                
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
         /// DDE Server 접속 해제
         /// </summary>
-        public void DisConnect()
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult DisConnect()
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
                 if (ddeHandle != null)
@@ -124,53 +142,65 @@ namespace Gunsol.Common.Protocol
                     {
                         ddeHandle.Disconnect();
 
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Success", this.ToString()));
-
+                        result.isSuccess = true;
                     }
                     else
                     {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Fail :: Not Conneted", this.ToString()));
+                        result.isSuccess = true;
                     }
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Fail :: DDE Client Not Initialized", this.ToString()));
+                    result.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
         /// DDE Server에 Request
         /// </summary>
         /// <param name="ddeItem">Request Item</param>
-        /// <param name="itemValue">Item 값</param>
-        /// <returns>성공 여부</returns>
-        public bool Request(string ddeItem, ref string itemValue)
+        /// <returns>함수 실행 결과 (ProtocolResult 객체)</returns>
+        public CommonStruct.ProtocolResult Request(string ddeItem)
         {
-            bool isSuccess = false;
+            CommonStruct.ProtocolResult result = new CommonStruct.ProtocolResult();
+            string receiveValue = string.Empty;
+
+            stopWatch.Start();
 
             try
             {
-                itemValue = ddeHandle.Request(ddeItem, 1);
-
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Request(Item = {1}) Success :: Value = {2}", this.ToString(), ddeItem, itemValue));
-
-                isSuccess = true;
+                receiveValue = ddeHandle.Request(ddeItem, 1);
+                result.funcResult.isSuccess = true;
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Request(Item = {1}) Exception :: Message = {2}", this.ToString(), ddeItem, ex.Message));
-                
-                itemValue = string.Empty;
-
-                isSuccess = false;
+                receiveValue = string.Empty;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
             }
 
-            return isSuccess;
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+            result.receiveData = receiveValue;
+
+            stopWatch.Reset();
+
+            return result;
         }
         #endregion
     }

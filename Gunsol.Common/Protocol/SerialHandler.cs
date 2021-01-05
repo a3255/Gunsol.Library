@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.IO.Ports;
 using System.Text;
 
-using Gunsol.Common.DBMS;
-using Gunsol.Common.File;
-using Gunsol.Common.Model;
+using Gunsol.Common.Model.Class;
+using Gunsol.Common.Model.Enum;
+using Gunsol.Common.Model.Struct;
 
 namespace Gunsol.Common.Protocol
 {
@@ -27,7 +28,7 @@ namespace Gunsol.Common.Protocol
         public SerialInfo serialInfo { get; set; }
 
         /// <summary>
-        /// 연결 여부
+        /// Serial 연결 상태
         /// </summary>
         public bool isConnect
         {
@@ -43,36 +44,34 @@ namespace Gunsol.Common.Protocol
                 }
             }
         }
+
+        /// <summary>
+        /// StopWatch 객체
+        /// </summary>
+        private Stopwatch stopWatch;
         #endregion
 
         #region Contructor
         /// <summary>
         /// Parameter를 사용하여 Propery 초기화
         /// </summary>
-        /// <param name="serialInfo">Serial 통신 정보 객체 (생략할 경우, 이후 초기화 필요)</param>
+        /// <param name="serialInfo">Serial 통신 정보 객체 (생략할 경우 이후 초기화 필요)</param>
         public SerialHandler(SerialInfo serialInfo = null)
         {
-            try
-            {
-                this.serialHandle = new SerialPort();
+            this.serialHandle = new SerialPort();
 
-                if (serialInfo != null)
-                {
-                    this.serialInfo = serialInfo;
-                    this.serialHandle.PortName = serialInfo.portName;
-                    this.serialHandle.BaudRate = serialInfo.baudRate;
-                    this.serialHandle.Parity = serialInfo.parity;
-                    this.serialHandle.DataBits = serialInfo.dataBits;
-                    this.serialHandle.StopBits = serialInfo.stopBits;
-                }
-                else
-                {
-                    this.serialInfo = new SerialInfo();
-                }
-            }
-            catch (Exception ex)
+            if (serialInfo != null)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: Message = {1}", this.ToString(), ex.Message));
+                this.serialInfo = serialInfo;
+                this.serialHandle.PortName = serialInfo.portName;
+                this.serialHandle.BaudRate = serialInfo.baudRate;
+                this.serialHandle.Parity = serialInfo.parity;
+                this.serialHandle.DataBits = serialInfo.dataBits;
+                this.serialHandle.StopBits = serialInfo.stopBits;
+            }
+            else
+            {
+                this.serialInfo = new SerialInfo();
             }
         }
         #endregion
@@ -82,13 +81,18 @@ namespace Gunsol.Common.Protocol
         /// Serial Port에 접속
         /// </summary>
         /// <param name="serialInfo">Serial 통신 정보 객체</param>
-        public void Connect(SerialInfo serialInfo = null)
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Connect(SerialInfo serialInfo = null)
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
                 if (serialInfo == null && this.serialInfo == null)
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail :: Serial Info Not Initialized", this.ToString()));
+                    result.isSuccess = false;
                 }
                 else
                 {
@@ -117,24 +121,38 @@ namespace Gunsol.Common.Protocol
 
                 if (serialHandle.IsOpen)
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Success", this.ToString()));
+                    result.isSuccess = true;
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail", this.ToString()));
+                    result.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
         /// Serial Port 접속 해제
         /// </summary>
-        public void DisConnect()
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult DisConnect()
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
                 if (serialHandle != null)
@@ -142,33 +160,40 @@ namespace Gunsol.Common.Protocol
                     if (serialHandle.IsOpen)
                     {
                         serialHandle.Close();
+                    }
 
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Success", this.ToString()));
-                    }
-                    else
-                    {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Fail :: Not Conneted", this.ToString()));
-                    }
+                    result.isSuccess = true;
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Fail :: Serial Handle Not Initialized", this.ToString()));
+                    result.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
         /// Serial Port에 데이터 송신
         /// </summary>
         /// <param name="sendBytes">송신 데이터</param>
-        /// <returns>성공 여부</returns>
-        public bool Send(byte[] sendBytes)
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Send(byte[] sendBytes)
         {
-            bool isSuccess = false;
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
 
             try
             {
@@ -184,42 +209,37 @@ namespace Gunsol.Common.Protocol
 
                     if (sendPacketLength > 0)
                     {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: Send() Success", this.ToString()));
-
-                        isSuccess = true;
+                        result.isSuccess = true;
                     }
                     else
                     {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: Send() Fail :: No Data Send", this.ToString()));
-
-                        isSuccess = false;
+                        result.isSuccess = false;
                     }
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Send() Fail :: Not Connected", this.ToString()));
-
-                    isSuccess = false;
+                    result.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Send() Exception :: Message = {1}", this.ToString(), ex.Message));
-
-                isSuccess = false;
+                result.isSuccess = false;
+                result.funcException = ex;
             }
 
-            return isSuccess;
+            return result;
         }
 
         /// <summary>
         /// Serial Port로부터 데이터 수신
         /// </summary>
-        /// <param name="receiveBytes">수신 데이터</param>
-        /// <returns>성공 여부</returns>
-        public bool Receive(List<byte> receiveBytes)
+        /// <returns>함수 실행 결과 (ProtocolResult 객체)</returns>
+        public CommonStruct.ProtocolResult Receive()
         {
-            bool isSuccess = false;
+            CommonStruct.ProtocolResult result = new CommonStruct.ProtocolResult();
+            List<byte> receiveBytes = new List<byte>();
+
+            stopWatch.Start();
 
             try
             {
@@ -237,39 +257,41 @@ namespace Gunsol.Common.Protocol
 
                         if (receiveBytes.Count > 0)
                         {
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: Receive() Success :: Count = {1}", this.ToString(), receiveBytes.Count));
-
-                            isSuccess = true;
+                            result.funcResult.isSuccess = true;
                         }
                         else
                         {
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: Receive() Fail :: No Data Received", this.ToString()));
-
-                            isSuccess = false;
+                            receiveBytes = null;
+                            result.funcResult.isSuccess = false;
                         }
                     }
                     else
                     {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: Receive() Fail :: Stream Is Empty", this.ToString()));
-
-                        isSuccess = false;
+                        receiveBytes = null;
+                        result.funcResult.isSuccess = false;
                     }
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Receive() Fail :: Not Connected", this.ToString()));
-
-                    isSuccess = false;
+                    receiveBytes = null;
+                    result.funcResult.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Receive() Exception :: Message = {1}", this.ToString(), ex.Message));
-
-                isSuccess = false;
+                receiveBytes = null;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
             }
 
-            return isSuccess;
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+            result.receiveData = receiveBytes;
+
+            stopWatch.Reset();
+
+            return result;
         }
         #endregion
     }

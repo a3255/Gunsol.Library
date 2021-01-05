@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.Ports;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 
-using Gunsol.Common.DBMS;
-using Gunsol.Common.File;
-using Gunsol.Common.Model;
+using Gunsol.Common.Model.Class;
+using Gunsol.Common.Model.Enum;
+using Gunsol.Common.Model.Struct;
 
 namespace Gunsol.Common.Protocol
 {
@@ -72,6 +73,11 @@ namespace Gunsol.Common.Protocol
             0X4400, 0X84C1, 0X8581, 0X4540, 0X8701, 0X47C0, 0X4680, 0X8641, 0X8201, 0X42C0,
             0X4380, 0X8341, 0X4100, 0X81C1, 0X8081, 0X4040
         };
+
+        /// <summary>
+        /// StopWatch 객체
+        /// </summary>
+        private Stopwatch stopWatch;
         #endregion
 
         #region Contructor
@@ -81,14 +87,7 @@ namespace Gunsol.Common.Protocol
         /// <param name="serialInfo">Serial 통신 정보 객체</param>
         public ModbusRtuHandler(SerialInfo serialInfo)
         {
-            try
-            {
-                serialHandler = new SerialHandler(serialInfo);
-            }
-            catch(Exception ex)
-            {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: Message = {1}", this.ToString(), ex.Message));
-            }
+            serialHandler = new SerialHandler(serialInfo);
         }
         #endregion
 
@@ -96,40 +95,80 @@ namespace Gunsol.Common.Protocol
         /// <summary>
         /// Serial Port에 접속
         /// </summary>
-        public void Connect()
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Connect()
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
                 serialHandler.Connect();
+
+                if (serialHandler.isConnect)
+                {
+                    result.isSuccess = true;
+                }
+                else
+                {
+                    result.isSuccess = false;
+                }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
         /// Serial Port 접속 해제
         /// </summary>
-        public void DisConnect()
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult DisConnect()
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
                 if (serialHandler != null)
                 {
-                    serialHandler.DisConnect();
+                    if (serialHandler.isConnect)
+                    {
+                        serialHandler.DisConnect();
+                    }
 
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Success", this.ToString()));
+                    result.isSuccess = true;
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Fail :: SerialHandler Not Initialized", this.ToString()));
+                    result.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
@@ -138,10 +177,12 @@ namespace Gunsol.Common.Protocol
         /// <param name="funcCode">Function Code</param>
         /// <param name="beginAddress">시작 주소</param>
         /// <param name="readCount">데이터 수</param>
-        /// <returns>데이터</returns>
-        public ushort Read(byte funcCode, ushort beginAddress, ushort readCount)
+        /// <returns>함수 실행 결과 (ProtocolResult 객체)</returns>
+        public CommonStruct.ProtocolResult Read(byte funcCode, ushort beginAddress, ushort readCount)
         {
-            ushort data = 0;
+            CommonStruct.ProtocolResult result = new CommonStruct.ProtocolResult();
+
+            stopWatch.Start();
 
             try
             {
@@ -157,42 +198,58 @@ namespace Gunsol.Common.Protocol
                 sendData.AddRange(readCountArray);
                 sendData.AddRange(GetCRCBytes(sendData.ToArray(), sendData.Count));
 
-                if (serialHandler.Send(sendData.ToArray()))
+                CommonStruct.FuncResult sendResult = serialHandler.Send(sendData.ToArray());
+
+                if (sendResult.isSuccess)
                 {
                     System.Threading.Thread.Sleep(100);
 
-                    if (serialHandler.Receive(recvData))
+                    CommonStruct.ProtocolResult receiveResult = serialHandler.Receive();
+
+                    if (receiveResult.funcResult.isSuccess)
                     {
+                        recvData = (List<byte>)receiveResult.receiveData;
+
                         if (recvData.Count > 0)
                         {
                             readDataArray[0] = recvData[recvData.Count - 3];
                             readDataArray[1] = recvData[recvData.Count - 4];
 
-                            data = BitConverter.ToUInt16(readDataArray, 0);
-
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: Read(Address = {1}) Success :: Data = {2}", this.ToString(), beginAddress, data));
+                            result.receiveData = BitConverter.ToUInt16(readDataArray, 0);
+                            result.funcResult.isSuccess = true;
                         }
                         else
                         {
-                            LogHandler.WriteLog(string.Empty, string.Format("{0} :: Read(Address = {1}) Fail :: Receive Response Fail", this.ToString(), beginAddress));
+                            result.receiveData = null;
+                            result.funcResult.isSuccess = false;
                         }
                     }
                     else
                     {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: Read(Address = {1}) Fail :: Receive Response Fail", this.ToString(), beginAddress));
+                        result.receiveData = null;
+                        result.funcResult.isSuccess = false;
                     }
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Read(Address = {1}) Fail :: Send Request Fail", this.ToString(), beginAddress));
+                    result.receiveData = null;
+                    result.funcResult.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Read(Address = {1}) Exception :: Message = {2}", this.ToString(), beginAddress, ex.Message));
+                result.receiveData = null;
+                result.funcResult.isSuccess = false;
+                result.funcResult.funcException = ex;
             }
 
-            return data;
+            stopWatch.Stop();
+
+            result.funcResult.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>

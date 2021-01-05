@@ -73,5 +73,21 @@ namespace Gunsol.Common.Model.Struct
             /// </summary>
             public string resultString;
         }
+
+        /// <summary>
+        /// Protocol 함수 실행 결과
+        /// </summary>
+        public struct ProtocolResult
+        {
+            /// <summary>
+            /// 함수 실행 결과
+            /// </summary>
+            public FuncResult funcResult;
+
+            /// <summary>
+            /// 수신 내용 (없을 경우 NULL)
+            /// </summary>
+            public object receiveData;
+        }
     }
 }

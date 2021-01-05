@@ -49,9 +49,13 @@ namespace Gunsol.Common.DBMS
             get
             {
                 if (mssqlConn == null)
+                {
                     return ConnectionState.Closed;
+                }
                 else
+                {
                     return mssqlConn.State;
+                }
             }
         }
 

@@ -115,7 +115,7 @@ namespace Gunsol.Common.File
         /// 지정 경로에 파일 생성
         /// </summary>
         /// <param name="filePath">생성 파일 경로 (생략할 경우 filePath Property 사용)</param>
-        /// <param name="isOverwrite">덮어쓰기 여부 (생략할 경우 전체 검색)</param>
+        /// <param name="isOverwrite">덮어쓰기 여부 (생략할 경우 덮어쓰지 않음)</param>
         /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
         public CommonStruct.FuncResult CreateFile(string filePath = null, bool isOverwrite = false)
         {
