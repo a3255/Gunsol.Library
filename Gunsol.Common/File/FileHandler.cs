@@ -117,7 +117,7 @@ namespace Gunsol.Common.File
         /// <param name="filePath">생성 파일 경로 (생략할 경우 filePath Property 사용)</param>
         /// <param name="isOverwrite">덮어쓰기 여부 (생략할 경우 전체 검색)</param>
         /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
-        public CommonStruct.FuncResult FileCreate(string filePath = null, bool isOverwrite = false)
+        public CommonStruct.FuncResult CreateFile(string filePath = null, bool isOverwrite = false)
         {
             CommonStruct.FuncResult result = new CommonStruct.FuncResult();
 
@@ -225,7 +225,7 @@ namespace Gunsol.Common.File
         /// </summary>
         /// <param name="filePath">삭제 파일 경로 (생략할 경우 filePath Property 사용)</param>
         /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
-        public CommonStruct.FuncResult FileDelete(string filePath = null)
+        public CommonStruct.FuncResult DeleteFile(string filePath = null)
         {
             CommonStruct.FuncResult result = new CommonStruct.FuncResult();
 
@@ -273,7 +273,7 @@ namespace Gunsol.Common.File
         /// <param name="filePath">읽을 파일 경로 (생략할 경우 filePath Property 사용)</param>
         /// <param name="isContinue">이어 쓰기 여부 (생략할 경우 기존 파일 내용에 이어 쓰기)</param>
         /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
-        public CommonStruct.FuncResult FileWrite(string fileContents, string filePath = null, bool isContinue = true)
+        public CommonStruct.FuncResult WriteFile(string fileContents, string filePath = null, bool isContinue = true)
         {
             CommonStruct.FuncResult result = new CommonStruct.FuncResult();
             StreamWriter fileWriter = null;
@@ -355,7 +355,7 @@ namespace Gunsol.Common.File
         /// <param name="filePath">읽을 파일 경로 (생략할 경우 filePath Property 사용)</param>
         /// <param name="readLines">읽을 Line 수 (생략할 경우 전체 내용 읽기)</param>
         /// <returns>함수 실행 결과 (FileResult 객체)</returns>
-        public CommonStruct.FileResult FileRead(string filePath = null, ushort readLines = 0)
+        public CommonStruct.FileResult ReadFile(string filePath = null, ushort readLines = 0)
         {
             CommonStruct.FileResult result = new CommonStruct.FileResult();
             StreamReader fileReader = null;
@@ -370,7 +370,6 @@ namespace Gunsol.Common.File
                 {
                     if (this.filePath.Equals(string.Empty))
                     {
-                        //LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileRead() Fail :: File Path Not Initialize", this.ToString()));
                         fileContents = string.Empty;
                     }
                 }
@@ -408,13 +407,10 @@ namespace Gunsol.Common.File
                         }
                     }
 
-                    //LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileRead() Success :: FileContents = {1}", this.ToString(), fileContents));
-
                     result.funcResult.isSuccess = true;
                 }
                 else
                 {
-                    //LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileRead() Fail :: File Not Exist (Path = {1})", this.ToString(), this.filePath));
                     fileContents = string.Empty;
 
                     result.funcResult.isSuccess = false;
@@ -460,7 +456,7 @@ namespace Gunsol.Common.File
         /// <param name="directoryPath">검색 대상 폴더 경로 (생략할 경우 directoryPath Property 사용)</param>
         /// <param name="searchPattern">검색 패턴 (생략할 경우 전체 검색)</param>
         /// <returns>함수 실행 결과 (FileResult 객체)</returns>
-        public CommonStruct.FileResult FileSearch(string directoryPath = null, string searchPattern = "*.*")
+        public CommonStruct.FileResult SearchFile(string directoryPath = null, string searchPattern = "*.*")
         {
             CommonStruct.FileResult result = new CommonStruct.FileResult();
             bool isSuccess = false;
@@ -525,7 +521,7 @@ namespace Gunsol.Common.File
         /// <param name="filePath">원본 파일 경로</param>
         /// <param name="isOverwrite">덮어쓰기 여부 (생략할 경우 전체 검색)</param>
         /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
-        public CommonStruct.FuncResult FileCopy(string destinationPath, string filePath = null, bool isOverwrite = false)
+        public CommonStruct.FuncResult CopyFile(string destinationPath, string filePath = null, bool isOverwrite = false)
         {
             CommonStruct.FuncResult result = new CommonStruct.FuncResult();
             bool isSuccess = false;
