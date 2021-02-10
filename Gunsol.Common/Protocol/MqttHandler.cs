@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
 
 using uPLibrary.Networking.M2Mqtt;
-using Gunsol.Common.DBMS;
-using Gunsol.Common.File;
-using Gunsol.Common.Model;
+using Gunsol.Common.Model.Class;
+using Gunsol.Common.Model.Enum;
+using Gunsol.Common.Model.Struct;
 
 namespace Gunsol.Common.Protocol
 {
@@ -44,6 +45,11 @@ namespace Gunsol.Common.Protocol
         /// 수신 메시지
         /// </summary>
         public Dictionary<string, string> subMessage { get; set; }
+
+        /// <summary>
+        /// StopWatch 객체
+        /// </summary>
+        private Stopwatch stopWatch;
         #endregion
 
         #region Contructor
@@ -53,17 +59,10 @@ namespace Gunsol.Common.Protocol
         /// <param name="hostName">MQTT Broker IP</param>
         public MqttHandler(string hostName)
         {
-            try
-            {
-                mqttHandle = new MqttClient(hostName);
-                subMessage = new Dictionary<string, string>();
+            mqttHandle = new MqttClient(hostName);
+            subMessage = new Dictionary<string, string>();
 
-                mqttHandle.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
-            }
-            catch (Exception ex)
-            {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Constructor Exception :: {1}", this.ToString(), ex.Message));
-            }
+            mqttHandle.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
         }
         #endregion
 
@@ -71,32 +70,51 @@ namespace Gunsol.Common.Protocol
         /// <summary>
         /// MQTT Broker에 접속
         /// </summary>
-        public void Connect()
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Connect()
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
                 mqttHandle.Connect(Guid.NewGuid().ToString());
 
-                if (isConnect)
+                if (mqttHandle.IsConnected)
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Success", this.ToString()));
+                    result.isSuccess = true;
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Fail", this.ToString()));
+                    result.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Connect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
         /// MQTT Broker 접속 해제
         /// </summary>
-        public void DisConnect()
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult DisConnect()
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
+            stopWatch.Start();
+
             try
             {
                 if (mqttHandle == null)
@@ -106,23 +124,28 @@ namespace Gunsol.Common.Protocol
                         subMessage.Clear();
 
                         mqttHandle.Disconnect();
+                    }
 
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Success", this.ToString()));
-                    }
-                    else
-                    {
-                        LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Fail :: Not Conneted", this.ToString()));
-                    }
+                    result.isSuccess = true;
                 }
                 else
                 {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Fail :: MQTT Not Initialized", this.ToString()));
+                    result.isSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: DisConnect() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            stopWatch.Stop();
+
+            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+
+            stopWatch.Reset();
+
+            return result;
         }
 
         /// <summary>
@@ -130,19 +153,32 @@ namespace Gunsol.Common.Protocol
         /// </summary>
         /// <param name="mqttTopic">Topic 명</param>
         /// <param name="topicMessage">메시지</param>
-        public void Publish(string mqttTopic, string topicMessage)
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Publish(string mqttTopic, string topicMessage)
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
             try
             {
-                byte[] sendBytes = Encoding.UTF8.GetBytes(topicMessage);
-                ushort publishResult = mqttHandle.Publish(mqttTopic, sendBytes);
+                if (mqttHandle.IsConnected)
+                {
+                    byte[] sendBytes = Encoding.UTF8.GetBytes(topicMessage);
+                    ushort publishResult = mqttHandle.Publish(mqttTopic, sendBytes);
 
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Publish(Topic = {1}) Success", this.ToString(), mqttTopic));
+                    result.isSuccess = true;
+                }
+                else
+                {
+                    result.isSuccess = false;
+                }
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Publish(Topic = {1}) Exception :: Message = {2}", this.ToString(), mqttTopic, ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            return result;
         }
 
         /// <summary>
@@ -150,21 +186,25 @@ namespace Gunsol.Common.Protocol
         /// </summary>
         /// <param name="mqttTopics">Topic 명</param>
         /// <param name="qosLevels">QoS</param>
-        public void Subscribe(List<string> mqttTopics, List<byte> qosLevels)
+        /// <returns>함수 실행 결과 (FuncResult 객체)</returns>
+        public CommonStruct.FuncResult Subscribe(List<string> mqttTopics, List<byte> qosLevels)
         {
+            CommonStruct.FuncResult result = new CommonStruct.FuncResult();
+
             try
             {
                 ushort subscribeResult = mqttHandle.Subscribe(mqttTopics.ToArray(), qosLevels.ToArray());
 
-                foreach (string t in mqttTopics)
-                {
-                    LogHandler.WriteLog(string.Empty, string.Format("{0} :: Subscribe(Topic = {1}) Success", this.ToString(), t));
-                }
+                result.isSuccess = true;
+                result.funcException = null;
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Subscribe() Exception :: Message = {1}", this.ToString(), ex.Message));
+                result.isSuccess = false;
+                result.funcException = ex;
             }
+
+            return result;
         }
         #endregion
 
@@ -184,8 +224,6 @@ namespace Gunsol.Common.Protocol
                 bool isRetain = e.Retain;
                 bool isDup = e.DupFlag;
 
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Receive(Topic = {1}) Success :: {1} = {2}", this.ToString(), pubTopic, pubMsg));
-
                 if (subMessage.Keys.Contains(pubTopic))
                 {
                     subMessage[pubTopic] = pubMsg;
@@ -197,7 +235,7 @@ namespace Gunsol.Common.Protocol
             }
             catch (Exception ex)
             {
-                LogHandler.WriteLog(string.Empty, string.Format("{0} :: Receive() Exception :: Message = {1}", this.ToString(), ex.Message));
+
             }
         }
         #endregion

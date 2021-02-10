@@ -163,7 +163,7 @@ namespace Gunsol.Common.File
             WebClient ftpClient = new WebClient();
             FileStream fileStream = null;
 
-            stopWatch.Start();
+            //stopWatch.Start();
 
             try
             {
@@ -180,8 +180,6 @@ namespace Gunsol.Common.File
 
                     fileStream = new FileStream(localPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
                     fileStream.Read(localFileData, 0, localFileData.Length);
-
-                    ftpClient.UploadData(remotePath, localFileData);
 
                     isSuccess = true;
                 }
@@ -201,13 +199,13 @@ namespace Gunsol.Common.File
                 }
             }
 
-            stopWatch.Stop();
+            //stopWatch.Stop();
 
             result.isSuccess = isSuccess;
             result.funcException = funcException;
-            result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
+            //result.totalMilliseconds = stopWatch.ElapsedMilliseconds;
 
-            stopWatch.Reset();
+            //stopWatch.Reset();
 
             return result;
         }

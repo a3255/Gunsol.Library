@@ -174,7 +174,7 @@ namespace Gunsol.Common.Protocol
         /// <summary>
         /// Modbus RTU 프로토콜을 사용하여 데이터 읽기
         /// </summary>
-        /// <param name="funcCode">Function Code</param>
+        /// <param name="funcCode">함수 Code</param>
         /// <param name="beginAddress">시작 주소</param>
         /// <param name="readCount">데이터 수</param>
         /// <returns>함수 실행 결과 (ProtocolResult 객체)</returns>

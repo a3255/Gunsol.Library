@@ -109,6 +109,7 @@
     <Compile Include="Protocol\DdeHandler.cs" />
     <Compile Include="Protocol\ModbusRtuHandler.cs" />
     <Compile Include="Protocol\ModbusTcpHandler.cs" />
+    <Compile Include="Protocol\MqttHandler.cs" />
     <Compile Include="Protocol\SerialHandler.cs" />
     <Compile Include="Protocol\TcpHandler.cs" />
   </ItemGroup>
