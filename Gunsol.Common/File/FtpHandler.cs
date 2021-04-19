@@ -82,6 +82,8 @@ namespace Gunsol.Common.File
             {
                 this.ftpUserInfo = ftpUserInfo;
             }
+
+            this.stopWatch = new Stopwatch();
         }
         #endregion
 
@@ -180,6 +182,8 @@ namespace Gunsol.Common.File
 
                     fileStream = new FileStream(localPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
                     fileStream.Read(localFileData, 0, localFileData.Length);
+
+                    ftpClient.UploadData(remotePath, localFileData);
 
                     isSuccess = true;
                 }

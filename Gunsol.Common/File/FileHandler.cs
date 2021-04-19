@@ -107,6 +107,8 @@ namespace Gunsol.Common.File
             {
                 this.filePath = filePath;
             }
+
+            this.stopWatch = new Stopwatch();
         }
         #endregion
 
@@ -125,6 +127,8 @@ namespace Gunsol.Common.File
 
             try
             {
+                FileStream creationFileStream = null;
+
                 if (filePath != null)
                 {
                     this.filePath = filePath;
@@ -135,7 +139,7 @@ namespace Gunsol.Common.File
                     if (isOverwrite)
                     {
                         System.IO.File.Delete(this.filePath);
-                        System.IO.File.Create(this.filePath);
+                        creationFileStream = System.IO.File.Create(this.filePath);
 
                         //LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success(Overwrite)", this.ToString(), this.filePath));
                     }
@@ -146,9 +150,14 @@ namespace Gunsol.Common.File
                 }
                 else
                 {
-                    System.IO.File.Create(filePath);
+                    creationFileStream = System.IO.File.Create(filePath);
 
                     //LogHandler.WriteLog(string.Empty, string.Format("{0} :: FileCreate(Path = {1}) Success", this.ToString(), this.filePath));
+                }
+
+                if (creationFileStream != null)
+                {
+                    creationFileStream.Close();
                 }
 
                 result.isSuccess = true;
@@ -299,14 +308,13 @@ namespace Gunsol.Common.File
 
                 if (isExist)
                 {
-                    fileStream = new FileStream(this.filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    fileWriter = new StreamWriter(fileStream);
-
                     if (!isContinue)
                     {
                         System.IO.File.WriteAllText(this.filePath, string.Empty);
                     }
 
+                    fileStream = new FileStream(this.filePath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+                    fileWriter = new StreamWriter(fileStream);
                     fileWriter.BaseStream.Seek(0, SeekOrigin.End);
                     fileWriter.Write(fileContents);
                     fileWriter.Flush();
@@ -327,15 +335,15 @@ namespace Gunsol.Common.File
             }
             finally
             {
-                if (fileStream != null)
-                {
-                    fileStream.Close();
-                }
-
                 if (fileWriter != null)
                 {
                     fileWriter.Close();
                 }
+
+                if (fileStream != null)
+                {
+                    fileStream.Close();
+                }                
             }
 
             stopWatch.Stop();
@@ -394,7 +402,7 @@ namespace Gunsol.Common.File
                         {
                             string currentLine = fileReader.ReadLine();
 
-                            if (currentLine == null)
+                            if (currentLine != null)
                             {
                                 currentLine = currentLine.Replace("\r\n", "\n");
 
@@ -538,7 +546,18 @@ namespace Gunsol.Common.File
 
                 if (isExist)
                 {
-                    System.IO.File.Copy(this.filePath, destinationPath, isOverwrite);
+                    string destFilePath = string.Empty;
+
+                    if (destinationPath.Substring(destinationPath.Length - 1, 1).Equals("\\"))
+                    {
+                        destFilePath = string.Format(@"{0}{1}", destinationPath, this.fileName);
+                    }
+                    else
+                    {
+                        destFilePath = string.Format(@"{0}\{1}", destinationPath, this.fileName);
+                    }
+
+                    System.IO.File.Copy(this.filePath, destFilePath, isOverwrite);
 
                     isSuccess = true;
                 }
